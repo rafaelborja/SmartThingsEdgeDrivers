@@ -1,4 +1,4 @@
--- Copyright 2021 SmartThings
+-- Copyright 2022 SmartThings
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ local TemperatureMeasurement = clusters.TemperatureMeasurement
 local RelativeHumidity = clusters.RelativeHumidity
 local PowerConfiguration = clusters.PowerConfiguration
 local zigbee_test_utils = require "integration_test.zigbee_test_utils"
-local IasEnrollResponseCode = require "st.zigbee.generated.zcl_clusters.IASZone.types.EnrollResponseCode"
 local t_utils = require "integration_test.utils"
 
 local mock_device = test.mock_device.build_test_zigbee_device(

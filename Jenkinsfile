@@ -1,29 +1,70 @@
-def getEnvName(branch) {
-  print(branch)
-  if (branch == "origin/main") {return "BETA"}
+def getEnvName() {
+  def branch = "${env.GIT_BRANCH}"
+  print branch
+  if (branch == "origin/main") {return "ALPHA"}
+  else if (branch == "origin/beta") {return "BETA"}
+  else if (branch == "origin/production") {return "PROD"}
+}
+
+def getChangedDrivers() {
+  def drivers = [].toSet()
+  def driver_prefix = "drivers/"
+  for (changeLogSet in currentBuild.changeSets) {
+    for (entry in changeLogSet.items) {
+      for (file in entry.affectedFiles) {
+        if (file.path.startsWith(driver_prefix) && !file.path.contains("test")) {
+          def short_path = file.path.substring(driver_prefix.length())
+          def first_slash = short_path.indexOf('/') + 1
+          def driver_name = short_path.substring(first_slash, short_path.indexOf('/', first_slash))
+          drivers.add(driver_name)
+        }
+      }
+    }
+  }
+  return drivers
 }
 
 pipeline {
   agent {
-    docker { 
-      image 'smartthings-registry.jfrog.io/iot/edge/edblua-formatter:latest'
+    docker {
+      image 'python:3.10'
       label 'production'
-      args '--entrypoint='
+      args '--entrypoint= -u 0:0'
     }
   }
+  environment {
+    BRANCH = getEnvName()
+    CHANGED_DRIVERS = getChangedDrivers()
+  }
   stages {
-    stage('update') {
+    stage('requirements') {
       steps {
         script {
-          // ugly hacks to get branch name and correct env variables for that branch
-          branchName = sh(returnStdout: true, script: 'echo $GIT_BRANCH').trim()
-          env_name = getEnvName(branchName)
-          env.ENVIRONMENT_URL = sh(returnStdout: true, script: "echo \$${env_name+'_ENVIRONMENT_URL'}").trim()
-          env.CHANNEL_ID = sh(returnStdout: true, script: "echo \$${env_name+'_CHANNEL_ID'}").trim()
-          env.TOKEN = sh(returnStdout: true, script: "echo \$${env_name+'_TOKEN'}").trim()
+          currentBuild.displayName = "#" + currentBuild.number + " " + env.BRANCH
+          currentBuild.description = "Drivers changed: " + env.CHANGED_DRIVERS
         }
-        sh 'pip3 install -r ./tools/requirements.txt'
-        sh 'python3 ./tools/deploy.py'
+        sh 'git config --global --add safe.directory "*"'
+        sh 'git clean -xfd'
+        sh 'apt-get update'
+        sh 'apt-get install zip -y'
+        sh 'pip3 install -r tools/requirements.txt'
+      }
+    }
+    stage('update') {
+      matrix {
+        axes {
+          axis {
+            name 'ENVIRONMENT'
+            values 'DEV', 'STAGING', 'ACCEPTANCE', 'PRODUCTION'
+          }
+        }
+        stages {
+          stage('environment_update') {
+            steps {
+              sh 'python3 tools/deploy.py'
+            }
+          }
+        }
       }
     }
   }

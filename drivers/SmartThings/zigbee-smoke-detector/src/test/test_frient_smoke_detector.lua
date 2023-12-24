@@ -1,4 +1,4 @@
--- Copyright 2021 SmartThings
+-- Copyright 2022 SmartThings
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -20,10 +20,7 @@ local PowerConfiguration = clusters.PowerConfiguration
 local capabilities = require "st.capabilities"
 local zigbee_test_utils = require "integration_test.zigbee_test_utils"
 local IasEnrollResponseCode = require "st.zigbee.generated.zcl_clusters.IASZone.types.EnrollResponseCode"
-local base64 = require "st.base64"
 local t_utils = require "integration_test.utils"
-
-local ZoneStatusAttribute = IASZone.attributes.ZoneStatus
 
 local mock_device = test.mock_device.build_test_zigbee_device(
   { profile = t_utils.get_profile_definition("smoke-battery.yml"),
@@ -34,7 +31,7 @@ local mock_device = test.mock_device.build_test_zigbee_device(
         model = "SMSZB-120",
         server_clusters = {0x0000,0x0001,0x0003,0x000F,0x0020,0x0500,0x0502}
       }
-    } 
+    }
   }
 )
 

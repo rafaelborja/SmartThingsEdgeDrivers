@@ -1,4 +1,4 @@
--- Copyright 2021 SmartThings
+-- Copyright 2022 SmartThings
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ end
 test.set_test_init_function(test_init)
 
 test.register_message_test(
-    "ActivePower Report should be handled",
+    "ActivePower Report should be handled. Sensor value is in W, capability attribute value is in hectowatts",
     {
       {
         channel = "zigbee",
@@ -101,7 +101,7 @@ test.register_coroutine_test(
                                        })
       test.socket.zigbee:__expect_send({
                                          mock_device.id,
-                                         SimpleMetering.attributes.InstantaneousDemand:configure_reporting(mock_device, 1, 3600, 1)
+                                         SimpleMetering.attributes.InstantaneousDemand:configure_reporting(mock_device, 1, 3600, 5)
                                        })
       test.socket.zigbee:__expect_send({
                                          mock_device.id,
@@ -115,7 +115,7 @@ test.register_coroutine_test(
                                        })
       test.socket.zigbee:__expect_send({
                                          mock_device.id,
-                                         ElectricalMeasurement.attributes.ActivePower:configure_reporting(mock_device, 1, 3600, 1)
+                                         ElectricalMeasurement.attributes.ActivePower:configure_reporting(mock_device, 1, 3600, 5)
                                        })
       test.socket.zigbee:__expect_send({
                                          mock_device.id,

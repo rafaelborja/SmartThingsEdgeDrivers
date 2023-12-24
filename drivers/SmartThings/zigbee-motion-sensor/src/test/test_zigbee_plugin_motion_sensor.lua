@@ -1,4 +1,4 @@
--- Copyright 2021 SmartThings
+-- Copyright 2022 SmartThings
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ local clusters = require "st.zigbee.zcl.clusters"
 local OccupancySensing = clusters.OccupancySensing
 local capabilities = require "st.capabilities"
 local zigbee_test_utils = require "integration_test.zigbee_test_utils"
-local base64 = require "st.base64"
 local t_utils = require "integration_test.utils"
 
 local OccupancyAttribute = OccupancySensing.attributes.Occupancy
@@ -32,7 +31,6 @@ local mock_device = test.mock_device.build_test_zigbee_device(
       zigbee_endpoints = {
         [1] = {
           id = 1,
-          manufacturer = "eZEX",
           model = "E280-KR0A0Z0-HA",
           server_clusters = {0x0000, 0x0003, 0x0004, 0x0406}
         }
@@ -106,5 +104,27 @@ test.register_message_test(
     },
   }
 )
+
+test.register_coroutine_test(
+  "Configure should configure all necessary attributes",
+  function()
+      test.wait_for_events()
+
+      test.socket.device_lifecycle:__queue_receive({ mock_device.id, "doConfigure" })
+      test.socket.zigbee:__set_channel_ordering("relaxed")
+
+      test.socket.zigbee:__expect_send(
+              {
+                  mock_device.id,
+                  zigbee_test_utils.build_bind_request(mock_device,
+                          zigbee_test_utils.mock_hub_eui,
+                          OccupancySensing.ID)
+              }
+      )
+
+      mock_device:expect_metadata_update({ provisioning_state = "PROVISIONED" })
+  end
+)
+
 
 test.run_registered_tests()

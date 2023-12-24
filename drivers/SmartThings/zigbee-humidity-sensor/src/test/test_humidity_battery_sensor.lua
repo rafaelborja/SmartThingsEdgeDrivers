@@ -1,4 +1,4 @@
--- Copyright 2021 SmartThings
+-- Copyright 2022 SmartThings
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ local t_utils = require "integration_test.utils"
 
 local mock_device = test.mock_device.build_test_zigbee_device(
     {
-      profile = t_utils.get_profile_definition("humidity-battery.yaml"),
+      profile = t_utils.get_profile_definition("humidity-battery.yml"),
       zigbee_endpoints = {
         [1] = {
           id = 1,

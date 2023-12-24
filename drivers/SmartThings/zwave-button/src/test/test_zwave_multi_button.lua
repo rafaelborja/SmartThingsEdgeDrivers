@@ -1,4 +1,4 @@
--- Copyright 2021 SmartThings
+-- Copyright 2022 SmartThings
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ local Battery = (require "st.zwave.CommandClass.Battery")({ version=1 })
 local CentralScene = (require "st.zwave.CommandClass.CentralScene")({ version=1 })
 local SceneActivation = (require "st.zwave.CommandClass.SceneActivation")({ version = 1 })
 local Configuration = (require "st.zwave.CommandClass.Configuration")({ version = 4 })
+local Association = (require "st.zwave.CommandClass.Association")({ version = 1 })
 local t_utils = require "integration_test.utils"
 
 local zwave_multi_2_button_profile = t_utils.get_profile_definition("multi-button-2.yml")
@@ -76,6 +77,21 @@ local function  test_init()
 end
 test.set_test_init_function(test_init)
 
+local function added_events(device, numberOfButtons, supportedButtonValues)
+  local components = {"main"}
+  for i = 1,numberOfButtons do
+    table.insert(components, "button"..i)
+  end
+  for _, component in pairs(components) do
+    if (component == "main") then
+      test.socket.capability:__expect_send(device:generate_test_message(component, capabilities.button.numberOfButtons({value = numberOfButtons}, {visibility = { displayed = false }})))
+    else
+      test.socket.capability:__expect_send(device:generate_test_message(component, capabilities.button.numberOfButtons({value = 1}, {visibility = { displayed = false }})))
+    end
+    test.socket.capability:__expect_send(device:generate_test_message(component, capabilities.button.supportedButtonValues(supportedButtonValues, {visibility = { displayed = false }})))
+  end
+end
+
 --central scene notification
 test.register_message_test(
   "Central scene notification command (scene number 1 & pushed) generate capability to proper component",
@@ -129,30 +145,27 @@ test.register_message_test(
   }
 )
 
-test.register_message_test(
+test.register_coroutine_test(
   "Central scene notification command (scene number 1 & double) generate capability to proper component",
-  {
-    {
-      channel = "zwave",
-      direction = "receive",
-      message = {
-        mock_everspring.id,
-        zw_test_utils.zwave_test_build_receive_command(
-          CentralScene:Notification({ key_attributes=CentralScene.key_attributes.KEY_PRESSED_2_TIMES, scene_number = 1})
-        )
-      }
-    },
-    {
-      channel = "capability",
-      direction = "send",
-      message = mock_everspring:generate_test_message("button1", capabilities.button.button.double({state_change = true}))
-    },
-    {
-      channel = "capability",
-      direction = "send",
-      message = mock_everspring:generate_test_message("main", capabilities.button.button.double({state_change = true}))
-    }
-  }
+  function ()
+    test.socket.capability:__set_channel_ordering("relaxed")
+    test.socket.device_lifecycle:__queue_receive({ mock_everspring.id, "added" })
+    added_events(mock_everspring, 2, {"pushed", "held", "double"})
+    test.socket.zwave:__expect_send(zw_test_utils.zwave_test_build_send_command(
+      mock_everspring,
+      Battery:Get({})
+    ))
+    test.wait_for_events()
+    test.socket.zwave:__queue_receive({mock_everspring.id,
+      CentralScene:Notification({ key_attributes=CentralScene.key_attributes.KEY_PRESSED_2_TIMES, scene_number = 1 })
+    })
+    test.socket.capability:__expect_send(mock_everspring:generate_test_message(
+      "button1",
+      capabilities.button.button.double({state_change = true})))
+    test.socket.capability:__expect_send(mock_everspring:generate_test_message(
+      "main",
+      capabilities.button.button.double({state_change = true})))
+  end
 )
 
 test.register_message_test(
@@ -207,30 +220,27 @@ test.register_message_test(
   }
 )
 
-test.register_message_test(
+test.register_coroutine_test(
   "Central scene notification command (scene number 2 & double) generate capability to proper component",
-  {
-    {
-      channel = "zwave",
-      direction = "receive",
-      message = {
-        mock_everspring.id,
-        zw_test_utils.zwave_test_build_receive_command(
-          CentralScene:Notification({ key_attributes=CentralScene.key_attributes.KEY_PRESSED_2_TIMES, scene_number = 2})
-        )
-      }
-    },
-    {
-      channel = "capability",
-      direction = "send",
-      message = mock_everspring:generate_test_message("button2", capabilities.button.button.double({state_change = true}))
-    },
-    {
-      channel = "capability",
-      direction = "send",
-      message = mock_everspring:generate_test_message("main", capabilities.button.button.double({state_change = true}))
-    }
-  }
+  function ()
+    test.socket.capability:__set_channel_ordering("relaxed")
+    test.socket.device_lifecycle:__queue_receive({ mock_everspring.id, "added" })
+    added_events(mock_everspring, 2, {"pushed", "held", "double"})
+    test.socket.zwave:__expect_send(zw_test_utils.zwave_test_build_send_command(
+      mock_everspring,
+      Battery:Get({})
+    ))
+    test.wait_for_events()
+    test.socket.zwave:__queue_receive({mock_everspring.id,
+      CentralScene:Notification({ key_attributes=CentralScene.key_attributes.KEY_PRESSED_2_TIMES, scene_number = 2 })
+    })
+    test.socket.capability:__expect_send(mock_everspring:generate_test_message(
+      "button2",
+      capabilities.button.button.double({state_change = true})))
+    test.socket.capability:__expect_send(mock_everspring:generate_test_message(
+      "main",
+      capabilities.button.button.double({state_change = true})))
+  end
 )
 
 test.register_message_test(
@@ -311,8 +321,30 @@ test.register_message_test(
   }
 )
 
-test.register_message_test(
+test.register_coroutine_test(
   "Central scene notification command (scene number 4 & held) generate capability to proper component",
+  function ()
+    test.socket.capability:__set_channel_ordering("relaxed")
+    test.socket.device_lifecycle:__queue_receive({ mock_aeotec_wallmote_quad.id, "added" })
+    added_events(mock_aeotec_wallmote_quad, 4, {"pushed", "held"})
+    test.socket.zwave:__expect_send(zw_test_utils.zwave_test_build_send_command(
+      mock_aeotec_wallmote_quad,
+      Battery:Get({})
+    ))
+    test.socket.zwave:__queue_receive({mock_aeotec_wallmote_quad.id,
+      CentralScene:Notification({ key_attributes=CentralScene.key_attributes.KEY_RELEASED, scene_number = 4 })
+    })
+    test.socket.capability:__expect_send(mock_aeotec_wallmote_quad:generate_test_message(
+      "button4",
+      capabilities.button.button.held({state_change = true})))
+    test.socket.capability:__expect_send(mock_aeotec_wallmote_quad:generate_test_message(
+      "main",
+      capabilities.button.button.held({state_change = true})))
+  end
+)
+
+test.register_message_test(
+  "Central scene notification command for an unsupported action should not generate an event",
   {
     {
       channel = "zwave",
@@ -320,19 +352,9 @@ test.register_message_test(
       message = {
         mock_aeotec_wallmote_quad.id,
         zw_test_utils.zwave_test_build_receive_command(
-          CentralScene:Notification({ key_attributes=CentralScene.key_attributes.KEY_RELEASED, scene_number = 4})
+          CentralScene:Notification({ key_attributes=CentralScene.key_attributes.KEY_HELD_DOWN, scene_number = 4})
         )
       }
-    },
-    {
-      channel = "capability",
-      direction = "send",
-      message = mock_aeotec_wallmote_quad:generate_test_message("button4", capabilities.button.button.held({state_change = true}))
-    },
-    {
-      channel = "capability",
-      direction = "send",
-      message = mock_aeotec_wallmote_quad:generate_test_message("main", capabilities.button.button.held({state_change = true}))
     }
   }
 )
@@ -456,36 +478,97 @@ test.register_coroutine_test(
         mock_aeotec_keyfob_button,
         Configuration:Set({parameter_number = 250, size = 1, configuration_value = 1})
     ))
+    test.socket.zwave:__expect_send(zw_test_utils.zwave_test_build_send_command(
+        mock_aeotec_keyfob_button,
+        Association:Set({grouping_identifier = 1, node_ids = {}})
+    ))
     mock_aeotec_keyfob_button:expect_metadata_update({ provisioning_state = "PROVISIONED" })
   end
 )
 
-test.register_message_test(
-  "Device added event should make proper event for fibaro keyfob",
-  {
-    {
-      channel = "device_lifecycle",
-      direction = "receive",
-      message = { mock_aeotec_keyfob_button.id, "added" },
-    },
-    {
-      channel = "capability",
-      direction = "send",
-      message = mock_aeotec_keyfob_button:generate_test_message("main", capabilities.button.supportedButtonValues(
-        {"pushed", "held"}
-      ))
-    },
-    {
-      channel = "capability",
-      direction = "send",
-      message = mock_aeotec_keyfob_button:generate_test_message("main", capabilities.button.numberOfButtons(
-        { value = 4 }
-      ))
-    }
-  },
-  {
-    inner_block_ordering = "relaxed"
-  }
+test.register_coroutine_test(
+  "Device added event should make proper event for aeotec keyfob",
+  function()
+    test.socket.capability:__set_channel_ordering("relaxed")
+    test.socket.device_lifecycle:__queue_receive({ mock_aeotec_keyfob_button.id, "added" })
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_keyfob_button:generate_test_message(
+        "main",
+        capabilities.button.numberOfButtons({ value = 4 }, {visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_keyfob_button:generate_test_message(
+        "main",
+        capabilities.button.supportedButtonValues({"pushed", "held"}, {visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_keyfob_button:generate_test_message(
+        "button1",
+        capabilities.button.numberOfButtons({ value = 1 }, {visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_keyfob_button:generate_test_message(
+        "button1",
+        capabilities.button.supportedButtonValues({"pushed", "held"}, {visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_keyfob_button:generate_test_message(
+        "button2",
+        capabilities.button.numberOfButtons({ value = 1 }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_keyfob_button:generate_test_message(
+        "button2",
+        capabilities.button.supportedButtonValues({ "pushed", "held" }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_keyfob_button:generate_test_message(
+        "button3",
+        capabilities.button.numberOfButtons({ value = 1 }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_keyfob_button:generate_test_message(
+        "button3",
+        capabilities.button.supportedButtonValues({ "pushed", "held" }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_keyfob_button:generate_test_message(
+        "button4",
+        capabilities.button.numberOfButtons({ value = 1 }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_keyfob_button:generate_test_message(
+        "button4",
+        capabilities.button.supportedButtonValues({ "pushed", "held" }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.zwave:__expect_send(
+      zw_test_utils.zwave_test_build_send_command(
+        mock_aeotec_keyfob_button,
+        Battery:Get({})
+      )
+    )
+  end
 )
 
 --configuration for fibaro keyfob
@@ -526,88 +609,259 @@ test.register_coroutine_test(
   end
 )
 
-test.register_message_test(
+test.register_coroutine_test(
   "Device added event should make proper event for fibaro keyfob",
-  {
-    {
-      channel = "device_lifecycle",
-      direction = "receive",
-      message = { mock_fibaro_keyfob_button.id, "added" },
-    },
-    {
-      channel = "capability",
-      direction = "send",
-      message = mock_fibaro_keyfob_button:generate_test_message("main", capabilities.button.supportedButtonValues(
-        {"pushed", "held", "double", "down_hold", "pushed_3x"}
-      ))
-    },
-    {
-      channel = "capability",
-      direction = "send",
-      message = mock_fibaro_keyfob_button:generate_test_message("main", capabilities.button.numberOfButtons(
-        { value = 6 }
-      ))
-    }
-  },
-  {
-    inner_block_ordering = "relaxed"
-  }
+  function()
+    test.socket.capability:__set_channel_ordering("relaxed")
+    test.socket.device_lifecycle:__queue_receive({ mock_fibaro_keyfob_button.id, "added" })
+
+    test.socket.capability:__expect_send(
+      mock_fibaro_keyfob_button:generate_test_message(
+        "main",
+        capabilities.button.numberOfButtons({ value = 6 }, {visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_fibaro_keyfob_button:generate_test_message(
+        "main",
+        capabilities.button.supportedButtonValues({"pushed", "held", "double", "down_hold", "pushed_3x"}, {visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_fibaro_keyfob_button:generate_test_message(
+        "button1",
+        capabilities.button.numberOfButtons({ value = 1 }, {visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_fibaro_keyfob_button:generate_test_message(
+        "button1",
+        capabilities.button.supportedButtonValues({"pushed", "held", "double", "down_hold", "pushed_3x"}, {visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_fibaro_keyfob_button:generate_test_message(
+        "button2",
+        capabilities.button.numberOfButtons({ value = 1 }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_fibaro_keyfob_button:generate_test_message(
+        "button2",
+        capabilities.button.supportedButtonValues({"pushed", "held", "double", "down_hold", "pushed_3x"}, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_fibaro_keyfob_button:generate_test_message(
+        "button3",
+        capabilities.button.numberOfButtons({ value = 1 }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_fibaro_keyfob_button:generate_test_message(
+        "button3",
+        capabilities.button.supportedButtonValues({"pushed", "held", "double", "down_hold", "pushed_3x"}, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_fibaro_keyfob_button:generate_test_message(
+        "button4",
+        capabilities.button.numberOfButtons({ value = 1 }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_fibaro_keyfob_button:generate_test_message(
+        "button4",
+        capabilities.button.supportedButtonValues({"pushed", "held", "double", "down_hold", "pushed_3x"}, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_fibaro_keyfob_button:generate_test_message(
+        "button5",
+        capabilities.button.numberOfButtons({ value = 1 }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_fibaro_keyfob_button:generate_test_message(
+        "button5",
+        capabilities.button.supportedButtonValues({"pushed", "held", "double", "down_hold", "pushed_3x"}, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_fibaro_keyfob_button:generate_test_message(
+        "button6",
+        capabilities.button.numberOfButtons({ value = 1 }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_fibaro_keyfob_button:generate_test_message(
+        "button6",
+        capabilities.button.supportedButtonValues({"pushed", "held", "double", "down_hold", "pushed_3x"}, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.zwave:__expect_send(
+      zw_test_utils.zwave_test_build_send_command(
+        mock_fibaro_keyfob_button,
+        Battery:Get({})
+      )
+    )
+  end
 )
 
-test.register_message_test(
+test.register_coroutine_test(
   "Device added event should make proper event for aeotec wallmote quad",
-  {
-    {
-      channel = "device_lifecycle",
-      direction = "receive",
-      message = { mock_aeotec_wallmote_quad.id, "added" },
-    },
-    {
-      channel = "capability",
-      direction = "send",
-      message = mock_aeotec_wallmote_quad:generate_test_message("main", capabilities.button.supportedButtonValues(
-        {"pushed", "held"}
-      ))
-    },
-    {
-      channel = "capability",
-      direction = "send",
-      message = mock_aeotec_wallmote_quad:generate_test_message("main", capabilities.button.numberOfButtons(
-        { value = 4 }
-      ))
-    }
-  },
-  {
-    inner_block_ordering = "relaxed"
-  }
+  function()
+    test.socket.capability:__set_channel_ordering("relaxed")
+    test.socket.device_lifecycle:__queue_receive({ mock_aeotec_wallmote_quad.id, "added" })
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_wallmote_quad:generate_test_message(
+        "main",
+        capabilities.button.numberOfButtons({ value = 4 }, {visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_wallmote_quad:generate_test_message(
+        "main",
+        capabilities.button.supportedButtonValues({"pushed", "held"}, {visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_wallmote_quad:generate_test_message(
+        "button1",
+        capabilities.button.numberOfButtons({ value = 1 }, {visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_wallmote_quad:generate_test_message(
+        "button1",
+        capabilities.button.supportedButtonValues({"pushed", "held"}, {visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_wallmote_quad:generate_test_message(
+        "button2",
+        capabilities.button.numberOfButtons({ value = 1 }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_wallmote_quad:generate_test_message(
+        "button2",
+        capabilities.button.supportedButtonValues({ "pushed", "held" }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_wallmote_quad:generate_test_message(
+        "button3",
+        capabilities.button.numberOfButtons({ value = 1 }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_wallmote_quad:generate_test_message(
+        "button3",
+        capabilities.button.supportedButtonValues({ "pushed", "held" }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_wallmote_quad:generate_test_message(
+        "button4",
+        capabilities.button.numberOfButtons({ value = 1 }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_wallmote_quad:generate_test_message(
+        "button4",
+        capabilities.button.supportedButtonValues({ "pushed", "held" }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.zwave:__expect_send(
+      zw_test_utils.zwave_test_build_send_command(
+        mock_aeotec_wallmote_quad,
+        Battery:Get({})
+      )
+    )
+  end
 )
 
-test.register_message_test(
+test.register_coroutine_test(
   "Device added event should make proper event for everspring wall switch",
-  {
-    {
-      channel = "device_lifecycle",
-      direction = "receive",
-      message = { mock_everspring.id, "added" },
-    },
-    {
-      channel = "capability",
-      direction = "send",
-      message = mock_everspring:generate_test_message("main", capabilities.button.supportedButtonValues(
-        {"pushed", "held", "double"}
-      ))
-    },
-    {
-      channel = "capability",
-      direction = "send",
-      message = mock_everspring:generate_test_message("main", capabilities.button.numberOfButtons(
-        { value = 2 }
-      ))
-    }
-  },
-  {
-    inner_block_ordering = "relaxed"
-  }
+  function()
+    test.socket.capability:__set_channel_ordering("relaxed")
+    test.socket.device_lifecycle:__queue_receive({ mock_everspring.id, "added" })
+
+    test.socket.capability:__expect_send(
+      mock_everspring:generate_test_message(
+        "main",
+        capabilities.button.numberOfButtons({ value = 2 }, {visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_everspring:generate_test_message(
+        "main",
+        capabilities.button.supportedButtonValues({"pushed", "held", "double"}, {visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_everspring:generate_test_message(
+        "button1",
+        capabilities.button.numberOfButtons({ value = 1 }, {visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_everspring:generate_test_message(
+        "button1",
+        capabilities.button.supportedButtonValues({"pushed", "held", "double"}, {visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_everspring:generate_test_message(
+        "button2",
+        capabilities.button.numberOfButtons({ value = 1 }, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.capability:__expect_send(
+      mock_everspring:generate_test_message(
+        "button2",
+        capabilities.button.supportedButtonValues({"pushed", "held", "double"}, { visibility = { displayed = false }})
+      )
+    )
+
+    test.socket.zwave:__expect_send(
+      zw_test_utils.zwave_test_build_send_command(
+          mock_everspring,
+          Battery:Get({})
+      )
+    )
+  end
 )
 
 test.run_registered_tests()

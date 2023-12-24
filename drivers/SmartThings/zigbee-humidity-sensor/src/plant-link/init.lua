@@ -1,4 +1,4 @@
--- Copyright 2021 SmartThings
+-- Copyright 2022 SmartThings
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
 
 local zcl_clusters = require "st.zigbee.zcl.clusters"
 local capabilities = require "st.capabilities"
-local device_management = require "st.zigbee.device_management"
-local battery_defaults = require "st.zigbee.defaults.battery_defaults"
 local PowerConfiguration = zcl_clusters.PowerConfiguration
 local RelativeHumidity = zcl_clusters.RelativeHumidity
 local utils = require "st.utils"

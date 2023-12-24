@@ -1,4 +1,4 @@
--- Copyright 2021 SmartThings
+-- Copyright 2022 SmartThings
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -95,16 +95,17 @@ local function chime_off(self, device)
 end
 
 local function handle_chime(self, device)
-  sendAlarmChimeCommand(device, CHIME)
   -- this comment was taken from a former DTH:
   -- Chime is kind of special as the alarm treats it as momentary
   -- and thus sends no updates to us, so we'll send this event and then send an off event soon after.
+  device:emit_event(capabilities.chime.chime.chime())
   device.thread:call_with_delay(
     CHIME_OFF_DELAY,
     function(d)
       chime_off(self,device)
     end
   )
+  sendAlarmChimeCommand(device, CHIME)
 end
 
 local function deactivateTamper(device)

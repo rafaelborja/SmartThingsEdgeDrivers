@@ -1,4 +1,4 @@
--- Copyright 2021 SmartThings
+-- Copyright 2022 SmartThings
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ local TemperatureMeasurement = clusters.TemperatureMeasurement
 
 local mock_device = test.mock_device.build_test_zigbee_device(
     {
-      profile = t_utils.get_profile_definition("humidity-temp-battery.yaml"),
+      profile = t_utils.get_profile_definition("humidity-temp-battery.yml"),
       zigbee_endpoints = {
         [1] = {
           id = 1,
