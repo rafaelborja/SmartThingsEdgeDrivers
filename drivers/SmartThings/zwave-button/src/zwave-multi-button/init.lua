@@ -1,4 +1,4 @@
--- Copyright 2021 SmartThings
+-- Copyright 2022 SmartThings
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -33,7 +33,8 @@ local ZWAVE_MULTI_BUTTON_FINGERPRINTS = {
   {mfr = 0x0086, prod = 0x0002, model = 0x0081}, -- Aeotec Wallmote EU
   {mfr = 0x0086, prod = 0x0102, model = 0x0081}, -- Aeotec Wallmote US
   {mfr = 0x0060, prod = 0x000A, model = 0x0003}, -- Everspring Remote Control
-  {mfr = 0x0086, prod = 0x0001, model = 0x0003} -- Aeotec Mimimote
+  {mfr = 0x0086, prod = 0x0001, model = 0x0003}, -- Aeotec Mimimote,
+  {mfr = 0x0371, prod = 0x0102, model = 0x0016}  -- Aeotec illumino Wallmote 7,
 }
 
 local function can_handle_zwave_multi_button(opts, driver, device, ...)
@@ -57,8 +58,20 @@ local map_key_attribute_to_capability = {
 
 local function central_scene_notification_handler(self, device, cmd)
   local event = map_key_attribute_to_capability[cmd.args.key_attributes]({state_change = true})
-  device:emit_event_for_endpoint(cmd.args.scene_number, event)
-  device:emit_event(event)
+  if event ~= nil then
+    local supportedEvents = device:get_latest_state(
+      device:endpoint_to_component(cmd.args.scene_number),
+      capabilities.button.ID,
+      capabilities.button.supportedButtonValues.NAME,
+      {capabilities.button.button.pushed.NAME, capabilities.button.button.held.NAME} -- default value
+    )
+    for _, event_name in pairs(supportedEvents) do
+      if event.value.value == event_name then
+        device:emit_event_for_endpoint(cmd.args.scene_number, event)
+        device:emit_event(event)
+      end
+    end
+  end
 end
 
 local function scene_activation_handler(self, device, cmd)
@@ -70,7 +83,7 @@ end
 
 local function component_to_endpoint(device, component_id)
   local ep_num = component_id:match("button(%d)")
-  return { ep_num and tonumber(ep_num) } or {}
+  return { ep_num and tonumber(ep_num) }
 end
 
 local function endpoint_to_component(device, ep)
@@ -101,7 +114,7 @@ local zwave_multi_button = {
     init = device_init
   },
   can_handle = can_handle_zwave_multi_button,
-  sub_drivers = { 
+  sub_drivers = {
     require("zwave-multi-button/aeotec-keyfob"),
     require("zwave-multi-button/fibaro-keyfob"),
     require("zwave-multi-button/aeotec-minimote")

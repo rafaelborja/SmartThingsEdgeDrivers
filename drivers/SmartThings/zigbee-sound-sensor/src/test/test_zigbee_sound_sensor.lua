@@ -1,4 +1,4 @@
--- Copyright 2021 SmartThings
+-- Copyright 2022 SmartThings
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ local data_types = require "st.zigbee.data_types"
 local PollControl = clusters.PollControl
 
 local IASZone = clusters.IASZone
-local IASWD = clusters.IASWD
 local PowerConfiguration = clusters.PowerConfiguration
 local TemperatureMeasurement = clusters.TemperatureMeasurement
 

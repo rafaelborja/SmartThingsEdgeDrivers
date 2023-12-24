@@ -1,4 +1,4 @@
--- Copyright 2021 SmartThings
+-- Copyright 2022 SmartThings
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ local PollControl = clusters.PollControl
 local capabilities = require "st.capabilities"
 local zigbee_test_utils = require "integration_test.zigbee_test_utils"
 local IasEnrollResponseCode = require "st.zigbee.generated.zcl_clusters.IASZone.types.EnrollResponseCode"
-local base64 = require "st.base64"
 local t_utils = require "integration_test.utils"
 
 local mock_device = test.mock_device.build_test_zigbee_device(
@@ -97,7 +96,7 @@ test.register_coroutine_test(
       test.socket.device_lifecycle:__queue_receive({ mock_device.id, "doConfigure"})
       test.socket.zigbee:__expect_send({
                                          mock_device.id,
-                                         PowerConfiguration.attributes.BatteryPercentageRemaining:read(mock_device)
+                                         PowerConfiguration.attributes.BatteryVoltage:read(mock_device)
                                        })
       test.socket.zigbee:__expect_send({
                                          mock_device.id,
@@ -126,7 +125,7 @@ test.register_coroutine_test(
                                        })
       test.socket.zigbee:__expect_send({
                                          mock_device.id,
-                                         PowerConfiguration.attributes.BatteryPercentageRemaining:configure_reporting(
+                                         PowerConfiguration.attributes.BatteryVoltage:configure_reporting(
                                              mock_device,
                                              30,
                                              21600,
@@ -223,7 +222,7 @@ test.register_message_test(
         direction = "send",
         message = {
           mock_device.id,
-          PowerConfiguration.attributes.BatteryPercentageRemaining:read(mock_device)
+          PowerConfiguration.attributes.BatteryVoltage:read(mock_device)
         }
       },
       {

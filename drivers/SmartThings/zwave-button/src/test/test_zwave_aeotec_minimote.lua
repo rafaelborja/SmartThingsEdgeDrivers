@@ -1,4 +1,4 @@
--- Copyright 2021 SmartThings
+-- Copyright 2022 SmartThings
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ local capabilities = require "st.capabilities"
 local zw = require "st.zwave"
 local zw_test_utils = require "integration_test.zwave_test_utils"
 local Basic = (require "st.zwave.CommandClass.Basic")({ version = 1 })
-local Battery = (require "st.zwave.CommandClass.Battery")({ version=1 })
 local Configuration = (require "st.zwave.CommandClass.Configuration")({ version = 4 })
 local t_utils = require "integration_test.utils"
 
@@ -27,8 +26,7 @@ local button_endpoints = {
   {
     command_classes = {
       {value = zw.BASIC},
-      {value = zw.SCENE_ACTIVATION},
-      {value = zw.BATTERY}
+      {value = zw.SCENE_ACTIVATION}
     }
   }
 }
@@ -55,7 +53,7 @@ test.register_message_test(
       message = {
         mock_aeotec_minimote.id,
         zw_test_utils.zwave_test_build_receive_command(
-          Basic:Set({ value = 10 })
+          Basic:Set({ value = 1 })
         )
       }
     },
@@ -81,7 +79,7 @@ test.register_message_test(
       message = {
         mock_aeotec_minimote.id,
         zw_test_utils.zwave_test_build_receive_command(
-          Basic:Set({ value = 20 })
+          Basic:Set({ value = 21 })
         )
       }
     },
@@ -108,7 +106,7 @@ test.register_message_test(
       message = {
         mock_aeotec_minimote.id,
         zw_test_utils.zwave_test_build_receive_command(
-          Basic:Set({ value = 40 })
+          Basic:Set({ value = 41 })
         )
       }
     },
@@ -134,7 +132,7 @@ test.register_message_test(
       message = {
         mock_aeotec_minimote.id,
         zw_test_utils.zwave_test_build_receive_command(
-          Basic:Set({ value = 60 })
+          Basic:Set({ value = 61 })
         )
       }
     },
@@ -160,7 +158,7 @@ test.register_message_test(
       message = {
         mock_aeotec_minimote.id,
         zw_test_utils.zwave_test_build_receive_command(
-          Basic:Set({ value = 80 })
+          Basic:Set({ value = 81 })
         )
       }
     },
@@ -186,7 +184,7 @@ test.register_message_test(
       message = {
         mock_aeotec_minimote.id,
         zw_test_utils.zwave_test_build_receive_command(
-          Basic:Set({ value = 100 })
+          Basic:Set({ value = 101 })
         )
       }
     },
@@ -212,7 +210,7 @@ test.register_message_test(
       message = {
         mock_aeotec_minimote.id,
         zw_test_utils.zwave_test_build_receive_command(
-          Basic:Set({ value = 120 })
+          Basic:Set({ value = 121 })
         )
       }
     },
@@ -238,7 +236,7 @@ test.register_message_test(
       message = {
         mock_aeotec_minimote.id,
         zw_test_utils.zwave_test_build_receive_command(
-          Basic:Set({ value = 140 })
+          Basic:Set({ value = 141 })
         )
       }
     },
@@ -262,10 +260,6 @@ test.register_coroutine_test(
     test.socket.device_lifecycle:__queue_receive({ mock_aeotec_minimote.id, "doConfigure" })
     test.socket.zwave:__expect_send(zw_test_utils.zwave_test_build_send_command(
         mock_aeotec_minimote,
-        Battery:Get({})
-    ))
-    test.socket.zwave:__expect_send(zw_test_utils.zwave_test_build_send_command(
-        mock_aeotec_minimote,
         Configuration:Set({parameter_number = 241, size = 1, configuration_value = 1})
     ))
     test.socket.zwave:__expect_send(zw_test_utils.zwave_test_build_send_command(
@@ -282,66 +276,76 @@ test.register_coroutine_test(
     ))
     test.socket.zwave:__expect_send(zw_test_utils.zwave_test_build_send_command(
         mock_aeotec_minimote,
-        Configuration:Set({parameter_number = 0, size = 1, configuration_value = 1})
+        Configuration:Set({parameter_number = 0, size = 4, configuration_value = 16842752}) --payload="   "
     ))
     test.socket.zwave:__expect_send(zw_test_utils.zwave_test_build_send_command(
         mock_aeotec_minimote,
-        Configuration:Set({parameter_number = 40, size = 1, configuration_value = 1})
+        Configuration:Set({parameter_number = 20, size = 4, configuration_value = 18153472}) --payload="  "
     ))
     test.socket.zwave:__expect_send(zw_test_utils.zwave_test_build_send_command(
         mock_aeotec_minimote,
-        Configuration:Set({parameter_number = 80, size = 1, configuration_value = 1})
+        Configuration:Set({parameter_number = 40, size = 4, configuration_value = 19464192}) --payload="()  "
     ))
     test.socket.zwave:__expect_send(zw_test_utils.zwave_test_build_send_command(
         mock_aeotec_minimote,
-        Configuration:Set({parameter_number = 120, size = 1, configuration_value = 1})
+        Configuration:Set({parameter_number = 60, size = 4, configuration_value = 20774912}) --payload="<=  "
     ))
     test.socket.zwave:__expect_send(zw_test_utils.zwave_test_build_send_command(
         mock_aeotec_minimote,
-        Configuration:Set({parameter_number = 20, size = 1, configuration_value = 1})
+        Configuration:Set({parameter_number = 80, size = 4, configuration_value = 22085632}) --payload="PQ  "
     ))
     test.socket.zwave:__expect_send(zw_test_utils.zwave_test_build_send_command(
         mock_aeotec_minimote,
-        Configuration:Set({parameter_number = 60, size = 1, configuration_value = 1})
+        Configuration:Set({parameter_number = 100, size = 4, configuration_value = 23396352}) --payload="de  "
     ))
     test.socket.zwave:__expect_send(zw_test_utils.zwave_test_build_send_command(
         mock_aeotec_minimote,
-        Configuration:Set({parameter_number = 100, size = 1, configuration_value = 1})
+        Configuration:Set({parameter_number = 120, size = 4, configuration_value = 24707072}) --payload="xy  "
     ))
     test.socket.zwave:__expect_send(zw_test_utils.zwave_test_build_send_command(
         mock_aeotec_minimote,
-        Configuration:Set({parameter_number = 140, size = 1, configuration_value = 1})
+        Configuration:Set({parameter_number = 140, size = 4, configuration_value = 26017792}) --payload="��  "
     ))
     mock_aeotec_minimote:expect_metadata_update({ provisioning_state = "PROVISIONED" })
   end
 )
 
-test.register_message_test(
+test.register_coroutine_test(
   "Device added event should make proper event for aeotec minimote",
-  {
-    {
-      channel = "device_lifecycle",
-      direction = "receive",
-      message = { mock_aeotec_minimote.id, "added" },
-    },
-    {
-      channel = "capability",
-      direction = "send",
-      message = mock_aeotec_minimote:generate_test_message("main", capabilities.button.supportedButtonValues(
-        {"pushed", "held"}
-      ))
-    },
-    {
-      channel = "capability",
-      direction = "send",
-      message = mock_aeotec_minimote:generate_test_message("main", capabilities.button.numberOfButtons(
-        { value = 4 }
-      ))
-    }
-  },
-  {
-    inner_block_ordering = "relaxed"
-  }
+  function()
+    test.socket.capability:__set_channel_ordering("relaxed")
+    test.socket.device_lifecycle:__queue_receive({ mock_aeotec_minimote.id, "added" })
+
+    test.socket.capability:__expect_send(
+      mock_aeotec_minimote:generate_test_message(
+        "main",
+        capabilities.button.supportedButtonValues({"pushed", "held"}, {visibility = { displayed = false }})
+      )
+    )
+    test.socket.capability:__expect_send(
+      mock_aeotec_minimote:generate_test_message(
+        "main",
+        capabilities.button.numberOfButtons({ value = 4 }, {visibility = { displayed = false }})
+      )
+    )
+
+    for button_name, _ in pairs(mock_aeotec_minimote.profile.components) do
+      if button_name ~= "main" then
+        test.socket.capability:__expect_send(
+          mock_aeotec_minimote:generate_test_message(
+            button_name,
+            capabilities.button.supportedButtonValues({ "pushed", "held" }, { visibility = { displayed = false } })
+          )
+        )
+        test.socket.capability:__expect_send(
+          mock_aeotec_minimote:generate_test_message(
+            button_name,
+            capabilities.button.numberOfButtons({ value = 1 }, { visibility = { displayed = false } })
+          )
+        )
+      end
+    end
+  end
 )
 
 test.run_registered_tests()

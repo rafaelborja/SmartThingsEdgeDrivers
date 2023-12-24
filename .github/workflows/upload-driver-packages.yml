@@ -1,0 +1,64 @@
+name: Upload driver packages
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'drivers/**'
+jobs:
+  find-changed-drivers:
+    runs-on: ubuntu-latest
+    outputs:
+      changed-drivers: ${{ steps.set-outputs.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: get changed drivers
+        id: changed-drivers
+        uses: tj-actions/changed-files@v35
+        with:
+          dir_names: true
+          dir_names_max_depth: 3
+          files: "drivers"
+          json: true
+      - id: set-outputs
+        run: echo "matrix=${{ steps.changed-drivers.outputs.all_modified_files }}" >> $GITHUB_OUTPUT
+      - run: echo ${{ steps.changed-drivers.outputs.all_modified_files }}
+
+  upload-driver:
+    runs-on: ubuntu-latest
+    needs:
+      - find-changed-drivers
+    strategy:
+      matrix:
+        driver: ${{ fromJSON(needs.find-changed-drivers.outputs.changed-drivers) }}
+    steps:
+      - uses: actions/checkout@v3
+      - run: echo "package_key=$(basename $(pwd))" >> $GITHUB_ENV
+        working-directory: ${{ matrix.driver }}
+      - name: Package the driver
+        working-directory: ${{ matrix.driver }}
+        run: |
+          zip -v ${{env.package_key}}.zip config.yml fingerprints.yml search-parameters.y*ml $(find . -name "*.pem") $(find . -name "*.crt") $(find profiles -name "*.y*ml") $(find . -name "*.lua") -x "*test*"
+      - name: Upload packaged driver artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.package_key }}
+          path: |
+            ${{ matrix.driver }}/*.zip
+
+  save-pr-info:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ${{ github.event.number }} > pr_number.txt
+      - name: Upload pr number artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: pr_number
+          path: |
+            pr_number.txt
+      - run: echo ${{ github.head_ref }} > head_ref.txt
+      - name: Upload head ref artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: head_ref
+          path: |
+            head_ref.txt
