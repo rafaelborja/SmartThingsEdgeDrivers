@@ -1,4 +1,4 @@
-name: 'Zigbee Smoke Detector'
+name: 'Tuya Zigbee Smoke Detector'
 packageKey: 'zigbee-smoke-detector'
 permissions:
   zigbee: {}
