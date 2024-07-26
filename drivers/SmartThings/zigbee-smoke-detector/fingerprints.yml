@@ -44,3 +44,7 @@ zigbeeManufacturer:
     manufacturer: HEIMAN
     model: GASSensor-N
     deviceProfileName: smoke-detector
+  - id: "Tuya/Smoke Sensor"
+    deviceLabel: Tuya Smoke Sensor
+    model: TS0205
+    deviceProfileName: smoke-battery
